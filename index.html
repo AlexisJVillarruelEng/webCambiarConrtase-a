@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restablecer contraseña</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #a8a8a8;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Crear nueva contraseña</h2>
+
+  <input id="pass1" type="password" placeholder="Nueva contraseña" />
+  <input id="pass2" type="password" placeholder="Repetir contraseña" />
+
+  <button id="btn">Guardar nueva contraseña</button>
+
+  <p id="msg"></p>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // 🔐 TU CONFIGURACIÓN AQUÍ:
+    const SUPABASE_URL = "https://TU-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "TU-ANON-KEY";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const btn = document.getElementById("btn");
+    const msg = document.getElementById("msg");
+
+    btn.onclick = async () => {
+
+      const p1 = document.getElementById("pass1").value;
+      const p2 = document.getElementById("pass2").value;
+
+      if (!p1 || !p2) {
+        msg.textContent = "Debes escribir ambas contraseñas.";
+        return;
+      }
+      if (p1 !== p2) {
+        msg.textContent = "Las contraseñas no coinciden.";
+        return;
+      }
+
+      msg.textContent = "Actualizando contraseña…";
+
+      // Firebase usa codes. Supabase usa session temporal del enlace.
+      const { error } = await supabase.auth.updateUser({ password: p1 });
+
+      if (error) {
+        msg.textContent = "Error: " + error.message;
+      } else {
+        msg.textContent = "Contraseña actualizada correctamente. Ya puedes abrir la app.";
+      }
+    };
+  </script>
+
+</body>
+</html>
