@@ -1,86 +1,98 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Restablecer contraseña</title>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 400px;
-      margin: auto;
-      text-align: center;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:disabled {
-      background: #a8a8a8;
-    }
-  </style>
-</head>
-<body>
-
-  <h2>Crear nueva contraseña</h2>
-
-  <input id="pass1" type="password" placeholder="Nueva contraseña" />
-  <input id="pass2" type="password" placeholder="Repetir contraseña" />
-
-  <button id="btn">Guardar nueva contraseña</button>
-
-  <p id="msg"></p>
-
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-    // 🔐 TU CONFIGURACIÓN AQUÍ:
-    const SUPABASE_URL = "https://vnwtjqltrabvawtpeudv.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3RqcWx0cmFidmF3dHBldWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3OTkzNTQsImV4cCI6MjA3NzM3NTM1NH0.qN6-icK-6HzHvoPy5NPrbVJ1LKMBDAn9p9zE8l1kkhE";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const btn = document.getElementById("btn");
-    const msg = document.getElementById("msg");
-
-    btn.onclick = async () => {
-
-      const p1 = document.getElementById("pass1").value;
-      const p2 = document.getElementById("pass2").value;
-
-      if (!p1 || !p2) {
-        msg.textContent = "Debes escribir ambas contraseñas.";
-        return;
+  <head>
+    <meta charset="utf-8" />
+    <title>Cambiar contraseña</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 16px;
       }
-      if (p1 !== p2) {
-        msg.textContent = "Las contraseñas no coinciden.";
-        return;
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
       }
-
-      msg.textContent = "Actualizando contraseña…";
-
-      // Firebase usa codes. Supabase usa session temporal del enlace.
-      const { error } = await supabase.auth.updateUser({ password: p1 });
-
-      if (error) {
-        msg.textContent = "Error: " + error.message;
-      } else {
-        msg.textContent = "Contraseña actualizada correctamente. Ya puedes abrir la app.";
+      label {
+        display: block;
+        margin-bottom: 8px;
       }
-    };
-  </script>
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 16px;
+      }
+      button {
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      #status {
+        margin-bottom: 12px;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Cambiar contraseña</h1>
+      <p id="status">Verificando enlace...</p>
 
-</body>
+      <form id="password-form" style="display:none;">
+        <label for="password">Nueva contraseña</label>
+        <input type="password" id="password" minlength="6" required />
+
+        <button type="submit">Guardar contraseña</button>
+      </form>
+    </div>
+
+    <!-- Supabase JS v2 desde CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+      const { createClient } = supabase;
+
+      const SUPABASE_URL = "https://vnwtjqltrabvawtpeudv.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3RqcWx0cmFidmF3dHBldWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3OTkzNTQsImV4cCI6MjA3NzM3NTM1NH0";
+
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const statusEl = document.getElementById("status");
+      const formEl = document.getElementById("password-form");
+      const passwordInput = document.getElementById("password");
+
+      // 1. Escuchar el evento de recuperación
+      client.auth.onAuthStateChange(async (event, session) => {
+        console.log("Auth event:", event, session);
+
+        if (event === "PASSWORD_RECOVERY") {
+          // Aquí ya hay sesión y podemos cambiar contraseña sin "Auth session missing"
+          statusEl.textContent = "Código verificado. Ingresa tu nueva contraseña.";
+          formEl.style.display = "block";
+        }
+      });
+
+      // 2. Manejar envío del formulario
+      formEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newPassword = passwordInput.value;
+
+        statusEl.textContent = "Actualizando contraseña...";
+
+        const { data, error } = await client.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (error) {
+          console.error(error);
+          statusEl.textContent = "Error al actualizar: " + error.message;
+          return;
+        }
+
+        statusEl.textContent = "Contraseña actualizada. Ya puedes volver a la app.";
+        formEl.style.display = "none";
+      });
+    </script>
+  </body>
 </html>
