@@ -48,14 +48,14 @@
       </form>
     </div>
 
-    <!-- Supabase JS v2 desde CDN -->
+    <!-- Supabase JS v2 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
       const { createClient } = supabase;
 
-      // 👇 PON AQUÍ TUS DATOS REALES
-      const SUPABASE_URL = "https://vnwtjqltrabvawtpeudv.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3RqcWx0cmFidmF3dHBldWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3OTkzNTQsImV4cCI6MjA3NzM3NTM1NH0.qN6-icK-6HzHvoPy5NPrbVJ1LKMBDAn9p9zE8l1kkhE";
+      // 👇 PON AQUÍ TU URL Y TU ANON KEY (de Project Settings → API)
+      const SUPABASE_URL = "https://TU-PROJECT.supabase.co";
+      const SUPABASE_ANON_KEY = "TU_PUBLIC_ANON_KEY";
 
       const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -63,41 +63,20 @@
       const formEl = document.getElementById("password-form");
       const passwordInput = document.getElementById("password");
 
-      // 🔹 1) Intercambiar el code por una sesión
-      async function init() {
-        try {
-          const url = new URL(window.location.href);
-          const code = url.searchParams.get("code");
+      console.log("Página de reset cargada");
 
-          if (!code) {
-            statusEl.textContent =
-              "No se encontró el código de recuperación en la URL.";
-            return;
-          }
+      // 1) Escuchamos el evento PASSWORD_RECOVERY
+      client.auth.onAuthStateChange((event, session) => {
+        console.log("Auth event:", event, session);
 
-          // Muy importante: esto crea la sesión a partir del code
-          const { data, error } = await client.auth.exchangeCodeForSession(code);
-
-          if (error) {
-            console.error(error);
-            statusEl.textContent =
-              "No se pudo verificar el enlace: " + error.message;
-            return;
-          }
-
-          // Si llega aquí, ya hay sesión y se puede cambiar la contraseña
+        if (event === "PASSWORD_RECOVERY") {
           statusEl.textContent =
             "Código verificado. Ingresa tu nueva contraseña.";
           formEl.style.display = "block";
-        } catch (err) {
-          console.error(err);
-          statusEl.textContent = "Error inesperado al verificar el enlace.";
         }
-      }
+      });
 
-      init();
-
-      // 🔹 2) Enviar nueva contraseña
+      // 2) Enviamos la nueva contraseña
       formEl.addEventListener("submit", async (e) => {
         e.preventDefault();
         const newPassword = passwordInput.value;
